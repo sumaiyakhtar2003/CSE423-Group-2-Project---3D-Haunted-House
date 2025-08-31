@@ -1,0 +1,60 @@
+def chase_enemy(enemy, player_pos, dt_seconds):
+   
+    dx = player_pos[0] - enemy[0]
+    dy = player_pos[1] - enemy[1]
+    dist = math.hypot(dx, dy)
+    if dist <= 1e-6:
+        return
+    step = enemy_speed * dt_seconds
+    
+    if step > dist:
+        step = dist
+    enemy[0] += (dx / dist) * step
+    enemy[1] += (dy / dist) * step
+   
+    enemy[2] += (player_pos[2] - enemy[2]) * 1 * dt_seconds
+
+def check_enemy_collision(enemy, player_pos):
+    global player_lives, is_game_over
+    dx = player_pos[0] - enemy[0]
+    dy = player_pos[1] - enemy[1]
+    dz = player_pos[2] - enemy[2]
+    dist = (dx**2 + dy**2 + dz**2)**0.5
+    if dist < close_range and not is_game_over:
+        player_lives -= 1
+        print(f"Enemy caught you! Lives left: {player_lives}")
+        enemy[0] = player_pos[0] + spawn_distance
+        enemy[1] = player_pos[1]
+        enemy[2] = player_pos[2]
+        if player_lives <= 0:
+            is_game_over = True
+            print("Game Over! Press 'R' to restart.")
+
+
+def reset_game():
+    global player_lives, inventory, found_digits, puzzle_input, puzzle_active
+    global puzzle_start_time, puzzle_cooldown, current_room, player_pos, enemy, is_game_over
+    print("Game reset! Lives depleted.")
+    player_lives = 5
+    inventory.clear()
+    found_digits.clear()
+    puzzle_input = ""
+    puzzle_active = False
+    puzzle_start_time = 0
+    puzzle_cooldown = False
+    current_room = 1
+    player_pos[:] = [0, 0, 120]
+    enemy[:] = [100.0, 100.0, 100.0, 1.0]
+    is_game_over = False
+
+    for room in room_items.values():
+        for item in room:
+            item.collected = False
+
+    for room in solved_rooms:
+        solved_rooms[room] = False
+
+def reset_puzzle():
+    global puzzle_input, puzzle_start_time
+    puzzle_input = ""
+    puzzle_start_time = time.time()
