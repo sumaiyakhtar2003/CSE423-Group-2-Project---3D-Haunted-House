@@ -1,0 +1,129 @@
+def draw_puzzle_box():
+    glPushMatrix()
+    glTranslatef(500, -500, 50)
+    glColor3f(0.5, 0.5, 0.5)
+    glScalef(2.0, 1.0, 0.5)
+    glutSolidCube(80)
+    glPopMatrix()
+
+    for i in range(4):
+        glPushMatrix()
+        button_spacing = 40
+        button_x = 485 - 60 + (i * button_spacing) + 10
+        button_y = -500
+        button_z = 77
+        glTranslatef(button_x, button_y, button_z)
+        glScalef(0.8, 0.8, 0.2)
+        glColor3f(1.0, 1.0, 1.0)
+        glutSolidCube(20)
+        glPopMatrix()
+
+def draw_player():
+    glPushMatrix()
+    glTranslatef(player_pos[0], player_pos[1], player_pos[2])
+    glRotatef(plr_rot, 0, 0, 1)
+    if game_state: #game over
+        glRotatef(90, 0, 1, 0) 
+
+    glColor3f(51/255, 102/255, 0)
+    glPushMatrix()
+    glScalef(0.5, 0.7, 1)
+    glutSolidCube(100)
+    glPopMatrix()
+
+    glColor3f(192/255, 192/255, 192/255)
+    glPushMatrix()
+    glTranslatef(0, 0, 35)
+    glRotatef(90, 0, 1, 0)
+    gluCylinder(gluNewQuadric(), 15, 10, 80, 20, 20)
+    glPopMatrix()
+
+    glColor3f(1, 204/255, 153/255)
+    glPushMatrix()
+    glTranslatef(0, -35, 35)
+    glRotatef(90, 0, 1, 0)
+    gluCylinder(gluNewQuadric(), 15, 10, 60, 20, 20)
+    glPopMatrix()
+
+    glColor3f(1, 204/255, 153/255)
+    glPushMatrix()
+    glTranslatef(0, 35, 35)
+    glRotatef(90, 0, 1, 0)
+    gluCylinder(gluNewQuadric(), 15, 10, 60, 20, 20)
+    glPopMatrix()
+
+    glColor3f(0, 0, 1)
+    glPushMatrix()
+    glTranslatef(0, -25, -120)
+    glRotatef(90, 0, 0, 1)
+    gluCylinder(gluNewQuadric(), 9, 15, 70, 20, 20)
+    glPopMatrix()
+
+    glColor3f(0, 0, 1)
+    glPushMatrix()
+    glTranslatef(0, 25, -120)
+    glRotatef(90, 0, 0, 1)
+    gluCylinder(gluNewQuadric(), 9, 15, 70, 20, 20)
+    glPopMatrix()
+
+    glColor3f(0, 0, 0)
+    glPushMatrix()
+    glTranslatef(0, 0, 65)
+    gluSphere(gluNewQuadric(), 35, 20, 30)
+    glPopMatrix()
+
+    glPopMatrix()
+
+def draw_door():
+    glPushMatrix()
+    glTranslatef(640, 0, 75)
+    glScalef(10, 100, 120)
+    if solved_rooms[current_room]:
+        glColor3f(0, 0, 0)
+    else:
+        glColor3f(0.3, 0.25, 0.2)
+    glutSolidCube(1.5)
+    glPopMatrix()
+
+def draw_enemy(e):
+    glPushMatrix()
+    glTranslatef(e[0], e[1], e[2])
+    glScalef(e[3], e[3], e[3])
+    glColor3f(0.8, 0.8, 0.8)  
+
+    glPushMatrix()
+    glTranslatef(0, 0, 40)
+    gluSphere(gluNewQuadric(), 40, 21, 21)
+    glPopMatrix()
+    glColor3f(0.8, 0.8, 0.8)
+    glPushMatrix()
+    glTranslatef(0, 0, 85)
+    gluSphere(gluNewQuadric(), 20, 10, 10)
+    glPopMatrix()
+    glPopMatrix()
+
+
+def is_colliding_with_furniture(player_pos, furniture_list, player_size=40):
+    px, py = player_pos[0], player_pos[1]
+    half_p = player_size / 2
+    for fx, fy, fz, fsize, _ in furniture_list:
+        if fsize == 999:
+            half_fx = 50 * 2.0 / 2
+            half_fy = 50 * 4.0 / 2
+        else:
+            half_fx = half_fy = fsize / 2
+        if (abs(px - fx) < half_p + half_fx and
+            abs(py - fy) < half_p + half_fy):
+            return True
+    return False
+
+def is_within_room(player_pos, room_size=1300, wall_thickness=50, player_size=40):
+    px, py = player_pos[0], player_pos[1]
+    half_room = room_size / 2 - wall_thickness - player_size / 2
+    return (-half_room <= px <= half_room) and (-half_room <= py <= half_room)
+
+def move_player(new_pos, furniture_list, player_size=40, room_size=1300, wall_thickness=50):
+    if (not is_colliding_with_furniture(new_pos, furniture_list, player_size)
+        and is_within_room(new_pos, room_size, wall_thickness, player_size)):
+        return new_pos
+    return None
