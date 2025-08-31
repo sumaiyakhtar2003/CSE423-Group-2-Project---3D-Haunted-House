@@ -1,0 +1,118 @@
+room_furniture = {
+    1: generate_furniture(1),
+    2: generate_furniture(2),
+    3: generate_furniture(3),
+}
+
+def draw_rooms():
+    draw_room(0, 0, room_furniture[current_room])
+
+
+def showScreen():
+    global is_game_over
+    if is_game_over:
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glPushMatrix()
+        glTranslatef(player_pos[0], player_pos[1], player_pos[2])
+        glRotatef(plr_rot, 0, 0, 1)
+        glRotatef(90, 0, 1, 0)  # Lay player sideways 
+        glColor3f(51/255, 102/255, 0)
+        glPushMatrix()
+        glScalef(0.5, 0.7, 1)
+        glutSolidCube(100)
+        glPopMatrix()
+        glColor3f(192/255, 192/255, 192/255)
+        glPushMatrix()
+        glTranslatef(0, 0, 35)
+        glRotatef(90, 0, 1, 0)
+        gluCylinder(gluNewQuadric(), 15, 10, 80, 20, 20)
+        glPopMatrix()
+        glColor3f(1, 204/255, 153/255)
+        glPushMatrix()
+        glTranslatef(0, -35, 35)
+        glRotatef(90, 0, 1, 0)
+        gluCylinder(gluNewQuadric(), 15, 10, 60, 20, 20)
+        glPopMatrix()
+        glColor3f(1, 204/255, 153/255)
+        glPushMatrix()
+        glTranslatef(0, 35, 35)
+        glRotatef(90, 0, 1, 0)
+        gluCylinder(gluNewQuadric(), 15, 10, 60, 20, 20)
+        glPopMatrix()
+        glColor3f(0, 0, 1)
+        glPushMatrix()
+        glTranslatef(0, -25, -120)
+        glRotatef(90, 0, 0, 1)
+        gluCylinder(gluNewQuadric(), 9, 15, 70, 20, 20)
+        glPopMatrix()
+        glColor3f(0, 0, 1)
+        glPushMatrix()
+        glTranslatef(0, 25, -120)
+        glRotatef(90, 0, 0, 1)
+        gluCylinder(gluNewQuadric(), 9, 15, 70, 20, 20)
+        glPopMatrix()
+        glColor3f(0, 0, 0)
+        glPushMatrix()
+        glTranslatef(0, 0, 65)
+        gluSphere(gluNewQuadric(), 35, 20, 30)
+        glPopMatrix()
+        glPopMatrix()
+        draw_text(400, 400, "Game Over! Press 'R' to restart")
+        glutSwapBuffers()
+        return
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()
+    glViewport(0, 0, 1000, 800)
+
+    setupCamera()
+    draw_rooms()
+    draw_door()
+
+    if perspective == "third":
+        draw_player()
+
+    # Items
+    for item in items_in_room():
+        if not item.collected:
+            glPushMatrix()
+            glTranslatef(item.x, item.y, item.z)
+            if isinstance(item, PaperItem):
+                glColor3f(1, 1, 1)
+                glScalef(1, 1.5, 0.1)
+                glutSolidCube(20)
+            else:
+                glColor3f(1, 1, 0)
+                glutSolidSphere(10, 10, 10)
+            glPopMatrix()
+
+   
+    draw_puzzle_box()
+    draw_text(10, 770, f"Room: {current_room}")
+    draw_text(10, 740, f"Camera: {perspective} (Right-click to toggle)")
+    draw_text(10, 710, f"Player Life: {player_lives}")
+    inventory_display = ', '.join(inventory) if inventory else 'Empty'
+    if cheat_flag:
+        inventory_display += f" | Password: {room_passwords[current_room]}"
+    draw_text(10, 690, f"Inventory: {inventory_display}")
+
+    draw_text(10, 660, f"Digits Found: {' '.join(found_digits)}")
+
+    if puzzle_message and time.time() - puzzle_message_timer < 3:
+        draw_text(350, 430, puzzle_message, color=(0, 0, 0))
+
+    if puzzle_active:
+        draw_text(10, 600, f"Enter Code: {puzzle_input}")
+        remaining = max(0, 30 - int(time.time() - puzzle_start_time))
+        draw_text(10, 630, f"Time Left: {remaining}s")
+
+
+    draw_enemy(enemy)
+
+    # Game Over message
+    if is_game_over:
+        draw_text(400, 400, "Game Over! Press 'R' to restart", color=(1, 0, 0))
+
+    glutSwapBuffers()
+    if cheat_flag:
+        draw_text(10, 630, f"CHEAT MODE ON Password: {room_passwords[current_room]}", color=(1, 0.2, 0.2))
