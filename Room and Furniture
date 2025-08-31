@@ -1,0 +1,130 @@
+def draw_room(room_x, room_y, furniture=None):
+    grid_dim = 13
+    cell_dim = 100
+    half_grid = (grid_dim / 2) * cell_dim
+    wall_h = 200
+    offset = cell_dim * grid_dim // 2
+
+    glPushMatrix()
+    glTranslatef(room_x, room_y, 0)
+
+    # Floor grid
+    for r in range(grid_dim):
+        for c in range(grid_dim):
+            x_start = (c * cell_dim) - half_grid
+            y_start = (r * cell_dim) - half_grid
+            glColor3f(1, 1, 1) if ((r + c) % 2 == 0) else glColor3f(0.5, 0, 0)
+            glBegin(GL_QUADS)
+            glVertex3f(x_start, y_start, 0)
+            glVertex3f(x_start + cell_dim, y_start, 0)
+            glVertex3f(x_start + cell_dim, y_start + cell_dim, 0)
+            glVertex3f(x_start, y_start + cell_dim, 0)
+            glEnd()
+
+    # Walls
+    glBegin(GL_QUADS)
+    glColor3f(0.1, 0.1, 0.1)  # top
+    glVertex3f(-offset, -offset, 0)
+    glVertex3f(offset, -offset, 0)
+    glVertex3f(offset, -offset, wall_h)
+    glVertex3f(-offset, -offset, wall_h)
+
+    glColor3f(0.1, 0.25, 0.1)  # bottom
+    glVertex3f(-offset, offset, 0)
+    glVertex3f(offset, offset, 0)
+    glVertex3f(offset, offset, wall_h)
+    glVertex3f(-offset, offset, wall_h)
+
+    glColor3f(0.25, 0.15, 0.08)  # right
+    glVertex3f(-offset, -offset, 0)
+    glVertex3f(-offset, offset, 0)
+    glVertex3f(-offset, offset, wall_h)
+    glVertex3f(-offset, -offset, wall_h)
+
+    glColor3f(0.3, 0, 0)  # left
+    glVertex3f(offset, -offset, 0)
+    glVertex3f(offset, offset, 0)
+    glVertex3f(offset, offset, wall_h)
+    glVertex3f(offset, -offset, wall_h)
+    glEnd()
+    glPopMatrix()
+
+    # Furniture
+    if furniture:
+        for fx, fy, fz, fsize, color in furniture:
+            glPushMatrix()
+            glColor3f(*color)
+            glTranslatef(fx, fy, fz)
+            if fsize == 999:
+                glScalef(2.0, 4.0, 0.5)
+                glutSolidCube(50)
+            else:
+                glutSolidCube(fsize)
+            glPopMatrix()
+
+def generate_furniture(room_type):
+    furniture = []
+    grid_dim = 13
+    cell_dim = 100
+    random.seed(room_type * 42)
+
+    if room_type == 1:  # Living Room
+        furniture.append((-400, -400, 40, 999, (0.4, 0.2, 0.1)))
+        furniture.append((-300, -400, 40, 999, (0.4, 0.2, 0.1)))
+        furniture.append((-100, 0, 25, 50, (0.6, 0.4, 0.2)))
+        furniture.append((400, -400, 30, 60, (0.2, 0.2, 0.2)))
+        furniture.append((200, 200, 30, 40, (0.5, 0.3, 0.1)))
+        furniture.append((-300, 300, 30, 40, (0.5, 0.3, 0.1)))
+        furniture.append((300, 100, 25, 35, (0.6, 0.4, 0.2)))
+        furniture.append((-400, 200, 25, 35, (0.6, 0.4, 0.2)))
+        for _ in range(8):
+            x = random.uniform(-500, 500)
+            y = random.uniform(-500, 500)
+            size = random.uniform(15, 25)
+            furniture.append((x, y, size/2, size, (0.8, 0.6, 0.2)))
+
+    elif room_type == 2:  # Kitchen
+        furniture.append((-200, 300, 35, 999, (0.4, 0.2, 0.1)))
+        for x, y in [(-300, 250), (-300, 350), (-100, 250), (-100, 350)]:
+            furniture.append((x, y, 30, 40, (0.2, 0.2, 1.0)))
+        appliances = [
+            (400, 300, 25, 50, (1.0, 1.0, 0.0)),
+            (300, 400, 20, 40, (1.0, 0.5, 0.0)),
+            (-400, 400, 30, 60, (0.5, 0.0, 0.5)),
+        ]
+        furniture.extend(appliances)
+        for _ in range(10):
+            x = random.uniform(-450, 450)
+            y = random.uniform(-450, 450)
+            size = random.uniform(10, 30)
+            color = (random.uniform(0.0, 1.0),
+                     random.uniform(0.0, 1.0),
+                     random.uniform(0.0, 1.0))
+            furniture.append((x, y, size/2, size, color))
+
+    else:  # Bedroom
+        furniture.append((-100, -100, 25, 999, (0.8, 0.6, 0.4)))
+        furniture.append((-100, -100, 35, 999, (0.9, 0.9, 0.9)))
+        furniture.append((-250, -100, 25, 40, (0.6, 0.4, 0.2)))
+        furniture.append((50, -100, 25, 40, (0.6, 0.4, 0.2)))
+        furniture.append((400, 300, 40, 80, (0.5, 0.3, 0.1)))
+        furniture.append((-450, 350, 80, 90, (0.4, 0.2, 0.1)))
+        furniture.append((300, -400, 35, 70, (0.6, 0.4, 0.2)))
+        furniture.append((350, -350, 30, 40, (0.5, 0.3, 0.1)))
+        furniture.append((450, 400, 10, 60, (0.8, 0.8, 0.9)))
+        items = [
+            (-300, 400, 15, 30, (0.9, 0.1, 0.1)),
+            (200, 400, 20, 40, (0.2, 0.8, 0.2)),
+            (-400, -300, 12, 24, (0.8, 0.8, 0.1)),
+            (400, -200, 18, 36, (0.6, 0.3, 0.8)),
+        ]
+        furniture.extend(items)
+        for _ in range(12):
+            x = random.uniform(-500, 500)
+            y = random.uniform(-500, 500)
+            size = random.uniform(8, 25)
+            color = (random.uniform(0.2, 0.9),
+                     random.uniform(0.2, 0.9),
+                     random.uniform(0.2, 0.9))
+            furniture.append((x, y, size/2, size, color))
+    return furniture
