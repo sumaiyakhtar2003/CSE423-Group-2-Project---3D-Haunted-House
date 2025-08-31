@@ -1,0 +1,65 @@
+# Enemy (x, y, z, scale)
+enemy = [100.0, 100.0, 100.0, 1.0]
+enemy_speed = 10.0 # very slow chase
+last_frame_time = None  # for time difference
+
+close_range = 80  # Distance for collision
+spawn_distance = 120  # Distance to spawn in front
+
+
+class Item:
+    def __init__(self, name, x, y, z):
+        self.name = name
+        self.x = x
+        self.y = y
+        self.z = z
+        self.collected = False
+
+class PaperItem(Item):
+    def __init__(self, digit, x, y, z):
+        super().__init__(f"digit_{digit}", x, y, z)
+        self.digit = digit
+
+def is_near_item(player_pos, item, threshold=60):
+    return (abs(player_pos[0] - item.x) < threshold and
+            abs(player_pos[1] - item.y) < threshold)
+
+room_items = {
+    1: [
+        Item('key', 200, 100, 0),
+        PaperItem('4', -300, 200, 0),
+        PaperItem('3', 100, 250, 0),
+        PaperItem('2', 200, -150, 0),
+        PaperItem('1', 0, -250, 0),
+    ],
+    2: [
+        Item('note', -300, -200, 0),
+        PaperItem('1', -250, 200, 0),
+        PaperItem('3', 150, 250, 0),
+        PaperItem('2', 200, -100, 0),
+        PaperItem('4', 50, -250, 0),
+    ],
+    3: [
+        Item('tool', 0, 400, 0),
+        PaperItem('2', -100, 200, 0),
+        PaperItem('3', 200, 150, 0),
+        PaperItem('1', -200, -100, 0),
+        PaperItem('4', 150, -150, 0),
+    ],
+}
+
+def items_in_room():
+    return room_items[current_room]
+
+def try_collect_item(player_pos, items):
+    global player_lives
+    for item in items:
+        if not item.collected and is_near_item(player_pos, item):
+            item.collected = True
+            if isinstance(item, PaperItem):
+                found_digits.append(item.digit)
+                print(f"Collected paper with number: {item.digit}")
+            else:
+                inventory.append(item.name)
+                player_lives += 1
+                print(f"Collected: {item.name} (+1 life)")
