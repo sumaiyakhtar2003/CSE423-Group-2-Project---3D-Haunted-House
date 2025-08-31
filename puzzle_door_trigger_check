@@ -1,0 +1,160 @@
+def check_puzzle_trigger():
+    global puzzle_active, puzzle_input, puzzle_message, puzzle_message_timer, puzzle_start_time, puzzle_cooldown
+    if solved_rooms[current_room] or puzzle_cooldown or puzzle_active:
+        return
+    if len(found_digits) < 4:
+        return 
+
+    if (420 <= player_pos[0] <= 580) and (-540 <= player_pos[1] <= -460):
+        puzzle_active = True
+        puzzle_start_time = time.time()
+        puzzle_input = ""
+        puzzle_message = "Puzzle activated! Enter code in terminal."
+        puzzle_message_timer = time.time()
+
+
+def check_door_trigger():
+    global current_room, player_pos, puzzle_message, is_game_over, inventory, found_digits
+
+    if not solved_rooms[current_room]:
+        return
+
+    door_x_min, door_x_max = 550, 700
+    door_y_min, door_y_max = -60, 90
+
+    if door_x_min <= player_pos[0] <= door_x_max and door_y_min <= player_pos[1] <= door_y_max:
+        if current_room < 3:
+            current_room += 1
+            player_pos[0], player_pos[1] = -500, 0
+            puzzle_message = f"Entered Room {current_room}"
+            found_digits.clear()  
+        else:
+            puzzle_message = "You Win! All puzzles solved."
+            inventory = ["Congratulations you win the game!"]
+            is_game_over = True
+def keyboardListener(key, x, y):
+    global cheat_flag, fps_view_toggle, plr_rot, player_pos
+    global puzzle_input, puzzle_active, puzzle_message, puzzle_message_timer
+    global player_lives, puzzle_start_time, puzzle_cooldown, cooldown_start_time
+    global is_game_over
+
+    if puzzle_active and key in b'0123456789':
+        digit = key.decode()
+        puzzle_input += digit
+        print(f"Digit entered: {digit} | Current input: {puzzle_input}")
+
+        if len(puzzle_input) == 4:
+            if puzzle_input == room_passwords[current_room]:
+                print("Puzzle Solved! Room unlocked.")
+                puzzle_message = "Correct Code!"
+                solved_rooms[current_room] = True
+                puzzle_active = False
+                puzzle_start_time = 0
+            else:
+                puzzle_cooldown = True
+                cooldown_start_time = time.time()
+                print("Wrong password! You lost a life.")
+                puzzle_message = "Incorrect Code. Try Again!"
+                puzzle_message_timer = time.time()
+                player_lives -= 1
+                if player_lives <= 0:
+                    print("Game Over. Resetting...")
+                    reset_game()
+                else:
+                    reset_puzzle()
+            return  
+
+    if is_game_over and key == b'r':
+        reset_game()
+        print("Game restarted!")
+        return
+
+    if not puzzle_active:
+        if key == b'c':
+            cheat_flag = not cheat_flag
+            if cheat_flag:
+                print("Cheat mode ON!")
+                # Reveal password for current room
+                print(f"Room {current_room} password: {room_passwords[current_room]}")
+            else:
+                print("Cheat mode OFF!")
+        elif key == b'v':
+            fps_view_toggle = not fps_view_toggle
+        elif key == b'd':
+            plr_rot -= 5
+        elif key == b'a':
+            plr_rot += 5
+        elif key == b's':
+            rad = math.radians(plr_rot)
+            new_x = player_pos[0] - math.cos(rad) * 10
+            new_y = player_pos[1] - math.sin(rad) * 10
+            new_pos = move_player([new_x, new_y, player_pos[2]], room_furniture[current_room])
+            if new_pos:
+                player_pos[0], player_pos[1] = new_pos[0], new_pos[1]
+        elif key == b'w':
+            rad = math.radians(plr_rot)
+            new_x = player_pos[0] + math.cos(rad) * 10
+            new_y = player_pos[1] + math.sin(rad) * 10
+            new_pos = move_player([new_x, new_y, player_pos[2]], room_furniture[current_room])
+            if new_pos:
+                player_pos[0], player_pos[1] = new_pos[0], new_pos[1]
+        elif key == b'e':
+            try_collect_item(player_pos, items_in_room())
+
+    glutPostRedisplay()
+
+def specialKeyListener(key, x, y):
+    global cam_pos
+    cx, cy, cz = cam_pos
+    if not game_state:
+        if key == GLUT_KEY_UP:
+            cy -= 10
+        elif key == GLUT_KEY_DOWN:
+            cy += 10
+        elif key == GLUT_KEY_LEFT:
+            cx += 10
+        elif key == GLUT_KEY_RIGHT:
+            cx -= 10
+    cam_pos = (cx, cy, cz)
+    glutPostRedisplay()
+
+def mouseListener(button, state, x, y):
+    global perspective, game_state
+    if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN and not game_state:
+        perspective = "first" if perspective == "third" else "third"
+        glutPostRedisplay()
+
+def setupCamera():
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(view_angle, 1.25, 0.1, 1500)
+
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
+    if perspective == "third":
+        cam_x, cam_y, cam_z = cam_pos
+        gluLookAt(cam_x, cam_y, cam_z, 0, 0, 0, 0, 0, 1)
+    else:
+        facing_angle = math.radians(plr_rot)
+        offset_fwd = 50
+        offset_side = 30
+        offset_up = 40
+        eye_x = player_pos[0] + offset_side * math.sin(facing_angle) - math.cos(facing_angle) * offset_fwd
+        eye_y = player_pos[1] - offset_side * math.cos(facing_angle) - math.sin(facing_angle) * offset_fwd
+        eye_z = player_pos[2] + offset_up
+        if cheat_flag:
+            if fps_view_toggle:
+                eye_x, eye_y, eye_z = 50, 50, 50
+                look_x, look_y, look_z = player_pos[0], player_pos[1], player_pos[2]
+            else:
+                look_x = eye_x + (math.cos(facing_angle)) * 100
+                look_y = eye_y + (math.sin(facing_angle)) * 100
+
+                look_z = eye_z
+        else:
+            look_x = eye_x + (math.cos(facing_angle)) * 100
+            look_y = eye_y + (math.sin(facing_angle)) * 100
+
+            look_z = eye_z
+        gluLookAt(eye_x, eye_y, eye_z, look_x, look_y, look_z, 0, 0, 1)
