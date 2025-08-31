@@ -1,0 +1,39 @@
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
+import random
+import math
+import time
+
+
+solved_rooms = {1: False, 2: False, 3: False}
+current_room = 1
+
+# Camera / View
+cam_pos = (0, 500, 500)
+view_angle = 120
+fps_view_toggle = False
+perspective = "third"  # first or third
+game_state = False  # False = playing, True = game over
+cheat_flag = False
+
+# Player
+player_pos = [0, 0, 120]
+plr_rot = 0
+player_lives = 5
+is_game_over = False
+
+# Puzzle
+puzzle_timer = None
+puzzle_start_time = 0
+puzzle_active = False
+puzzle_input = ""
+found_digits = []
+room_passwords = {1: "4321", 2: "1324", 3: "2314"}
+puzzle_message = ""
+puzzle_message_timer = 0
+puzzle_cooldown = False
+cooldown_start_time = 0
+
+# Inventory
+inventory = []
