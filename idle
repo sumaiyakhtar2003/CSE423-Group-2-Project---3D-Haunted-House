@@ -1,0 +1,60 @@
+def idle():
+    global puzzle_message, puzzle_message_timer, puzzle_cooldown, player_lives
+    global puzzle_active, cooldown_start_time, last_frame_time, is_game_over
+
+    now = time.time()
+    if last_frame_time is None:
+        last_frame_time = now
+        dt = 0.016
+    else:
+        dt = max(0.0, min(0.1, now - last_frame_time)) 
+        last_frame_time = now
+
+    # Puzzle 30s timer
+    if puzzle_active and not solved_rooms[current_room]:
+        if time.time() - puzzle_start_time > 30:
+            puzzle_message = "Puzzle failed. Time's up!"
+            puzzle_message_timer = time.time()
+            player_lives -= 1
+            if player_lives <= 0:
+                reset_game()
+            else:
+                reset_puzzle()
+            puzzle_active = False
+            puzzle_cooldown = True
+            cooldown_start_time = time.time()
+
+    # 3-second cooldown
+    if puzzle_cooldown and time.time() - cooldown_start_time > 3:
+        puzzle_cooldown = False
+
+    # Triggers
+    check_puzzle_trigger()
+    check_door_trigger()
+
+   
+    if not is_game_over:
+        if not cheat_flag:  
+            chase_enemy(enemy, player_pos, dt)
+            check_enemy_collision(enemy, player_pos)
+
+
+    glutPostRedisplay()
+
+
+def main():
+    glutInit()
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitWindowSize(1000, 800)
+    glutInitWindowPosition(0, 0)
+    glutCreateWindow(b"3D Room with Player and Camera Controls")
+    glEnable(GL_DEPTH_TEST)
+    glutDisplayFunc(showScreen)
+    glutKeyboardFunc(keyboardListener)
+    glutSpecialFunc(specialKeyListener)
+    glutMouseFunc(mouseListener)
+    glutIdleFunc(idle)
+    glutMainLoop()
+
+if __name__ == "__main__":
+    main()
